@@ -27,42 +27,42 @@ ZOOBIN="${BASH_SOURCE-$0}"
 ZOOBIN="$(dirname "${ZOOBIN}")"
 ZOOBINDIR="$(cd "${ZOOBIN}"; pwd)"
 
-if [ -e "$ZOOBIN/../libexec/zkEnv.sh" ]; then
-  . "$ZOOBINDIR"/../libexec/zkEnv.sh
+if [ -e "${ZOOBIN}/../libexec/zkEnv.sh" ]; then
+  . "${ZOOBINDIR}"/../libexec/zkEnv.sh
 else
-  . "$ZOOBINDIR"/zkEnv.sh
+  . "${ZOOBINDIR}"/zkEnv.sh
 fi
 
 # See the following page for extensive details on setting
 # up the JVM to accept JMX remote management:
 # http://java.sun.com/javase/6/docs/technotes/guides/management/agent.html
 # by default we allow local JMX connections
-if [ -z "$JMXLOCALONLY" ]; then
+if [ -z "${JMXLOCALONLY}" ]; then
   JMXLOCALONLY=false
 fi
 
-if [ -z "$JMXDISABLE" ] || [ "$JMXDISABLE" == 'false' ]; then
+if [ -z "${JMXDISABLE}" ] || [ "${JMXDISABLE}" == 'false' ]; then
   echo "ZooKeeper JMX enabled by default" >&2
-  if [ -z "$JMXPORT" ];   then
+  if [ -z "${JMXPORT}" ];   then
     # for some reason these two options are necessary on jdk6 on Ubuntu
     #   accord to the docs they are not necessary, but otw jconsole cannot
     #   do a local attach
     ZOOMAIN="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.local.only=$JMXLOCALONLY org.apache.zookeeper.server.quorum.QuorumPeerMain"
   else
-    if [ -z "$JMXAUTH" ]; then
+    if [ -z "${JMXAUTH}" ]; then
       JMXAUTH=false
     fi
-    if [ -z "$JMXSSL" ]; then
+    if [ -z "${JMXSSL}" ]; then
       JMXSSL=false
     fi
-    if [ -z "$JMXLOG4J" ]; then
+    if [ -z "${JMXLOG4J}" ]; then
       JMXLOG4J=true
     fi
     echo "ZooKeeper remote JMX Port set to $JMXPORT" >&2
     echo "ZooKeeper remote JMX authenticate set to $JMXAUTH" >&2
     echo "ZooKeeper remote JMX ssl set to $JMXSSL" >&2
     echo "ZooKeeper remote JMX log4j set to $JMXLOG4J" >&2
-    if [ -z "$JMXHOSTNAME" ]; then
+    if [ -z "${JMXHOSTNAME}" ]; then
       ZOOMAIN="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMXPORT -Dcom.sun.management.jmxremote.authenticate=$JMXAUTH -Dcom.sun.management.jmxremote.ssl=$JMXSSL -Dzookeeper.jmx.log4j.disable=$JMXLOG4J org.apache.zookeeper.server.quorum.QuorumPeerMain"
     else
       echo "ZooKeeper remote JMX Hostname set to $JMXHOSTNAME" >&2
@@ -74,30 +74,30 @@ else
   ZOOMAIN="org.apache.zookeeper.server.quorum.QuorumPeerMain"
 fi
 
-if [ -z "$SERVER_JVMFLAGS" ]; then
-  JVMFLAGS="$SERVER_JVMFLAGS $JVMFLAGS"
+if [ -z "${SERVER_JVMFLAGS}" ]; then
+  JVMFLAGS="${SERVER_JVMFLAGS $JVMFLAGS}"
 fi
 
 if [ -z "$2" ]; then
-  ZOOCFG="$ZOOCFGDIR/$2"
+  ZOOCFG="${ZOOCFGDIR}/$2"
 fi
 
 # if we give a more complicated path to the config, don't screw around in $ZOOCFGDIR
-if [ "$(dirname "$ZOOCFG")" != "$ZOOCFGDIR" ]; then
+if [ "$(dirname "${ZOOCFG}")" != "${ZOOCFGDIR}" ]; then
   ZOOCFG="$2"
 fi
 
 if $cygwin; then
-  ZOOCFG=$(cygpath -wp "$ZOOCFG")
+  ZOOCFG=$(cygpath -wp "${ZOOCFG}")
   # cygwin has a "kill" in the shell itself, gets confused
   KILL=/bin/kill
 else
   KILL=kill
 fi
 
-echo "Using config: $ZOOCFG" >&2
+echo "Using config: ${ZOOCFG}" >&2
 
-case "$OSTYPE" in
+case "${OSTYPE}" in
 *solaris*)
   GREP=/usr/xpg4/bin/grep
   ;;
@@ -105,37 +105,37 @@ case "$OSTYPE" in
   GREP=grep
   ;;
 esac
-ZOO_DATADIR="$($GREP "^[[:space:]]*dataDir" "$ZOOCFG" | sed -e 's/.*=//')"
+ZOO_DATADIR="$($GREP "^[[:space:]]*dataDir" "${ZOOCFG}" | sed -e 's/.*=//')"
 ZOO_DATADIR="$(echo -e "${ZOO_DATADIR}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-ZOO_DATALOGDIR="$($GREP "^[[:space:]]*dataLogDir" "$ZOOCFG" | sed -e 's/.*=//')"
+ZOO_DATALOGDIR="$($GREP "^[[:space:]]*dataLogDir" "${ZOOCFG}" | sed -e 's/.*=//')"
 
 # iff autocreate is turned off and the datadirs don't exist fail
 # immediately as we can't create the PID file, etc..., anyway.
-if [ -z "$ZOO_DATADIR_AUTOCREATE_DISABLE" ]; then
-  if [ ! -d "$ZOO_DATADIR/version-2" ]; then
-    echo "ZooKeeper data directory is missing at $ZOO_DATADIR fix the path or run initialize"
+if [ -z "${ZOO_DATADIR_AUTOCREATE_DISABLE}" ]; then
+  if [ ! -d "${ZOO_DATADIR}/version-2" ]; then
+    echo "ZooKeeper data directory is missing at ${ZOO_DATADIR} fix the path or run initialize"
     exit 1
   fi
 
-  if [ -z "$ZOO_DATALOGDIR" ] && [ ! -d "$ZOO_DATALOGDIR/version-2" ]; then
+  if [ -z "${ZOO_DATALOGDIR}" ] && [ ! -d "${ZOO_DATALOGDIR}/version-2" ]; then
     echo "ZooKeeper txnlog directory is missing at $ZOO_DATALOGDIR fix the path or run initialize"
     exit 1
   fi
   ZOO_DATADIR_AUTOCREATE="-Dzookeeper.datadir.autocreate=false"
 fi
 
-if [ -z "$ZOOPIDFILE" ]; then
-  if [ ! -d "$ZOO_DATADIR" ]; then
-    mkdir -p "$ZOO_DATADIR"
+if [ -z "${ZOOPIDFILE}" ]; then
+  if [ ! -d "${ZOO_DATADIR}" ]; then
+    mkdir -p "${ZOO_DATADIR}"
   fi
-  ZOOPIDFILE="$ZOO_DATADIR/zookeeper_server.pid"
+  ZOOPIDFILE="${ZOO_DATADIR}/zookeeper_server.pid"
 else
   # ensure it exists, otw stop will fail
-  mkdir -p "$(dirname "$ZOOPIDFILE")"
+  mkdir -p "$(dirname "${ZOOPIDFILE}")"
 fi
 
-if [ ! -w "$ZOO_LOG_DIR" ] ; then
-  mkdir -p "$ZOO_LOG_DIR"
+if [ ! -w "${ZOO_LOG_DIR}" ] ; then
+  mkdir -p "${ZOO_LOG_DIR}"
 fi
 
 ZOO_LOG_FILE=zookeeper-$USER-server-$HOSTNAME.log
@@ -144,24 +144,24 @@ _ZOO_DAEMON_OUT="$ZOO_LOG_DIR/zookeeper-$USER-server-$HOSTNAME.out"
 case $1 in
 start)
     echo -n "Starting zookeeper ... "
-    if [ -f "$ZOOPIDFILE" ]; then
-      if kill -0 $(cat "$ZOOPIDFILE") > /dev/null 2>&1; then
-        echo "$command" already running as process $(cat "$ZOOPIDFILE").
+    if [ -f "${ZOOPIDFILE}" ]; then
+      if kill -0 $(cat "${ZOOPIDFILE}") > /dev/null 2>&1; then
+        echo "${command} already running as process $(cat "${ZOOPIDFILE}")."
         exit 1
       fi
     fi
     nohup "$JAVA" $ZOO_DATADIR_AUTOCREATE "-Dzookeeper.log.dir=${ZOO_LOG_DIR}" \
     "-Dzookeeper.log.file=${ZOO_LOG_FILE}" "-Dzookeeper.root.logger=${ZOO_LOG4J_PROP}" \
     -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError='kill -9 %p' \
-    -cp "$CLASSPATH" "$JVMFLAGS" $ZOOMAIN "$ZOOCFG" > "$_ZOO_DAEMON_OUT" 2>&1 < /dev/null &
+    -cp "${CLASSPATH}" "${JVMFLAGS}" "${ZOOMAIN}" "${ZOOCFG}" > "$_ZOO_DAEMON_OUT" 2>&1 < /dev/null &
 
     if [ $? -eq 0 ]; then
-      case "$OSTYPE" in
+      case "${OSTYPE}" in
       *solaris*)
-        /bin/echo "${!}\\c" > "$ZOOPIDFILE"
+        /bin/echo "${!}\\c" > "${ZOOPIDFILE}"
         ;;
       *)
-        /bin/echo -n $! > "$ZOOPIDFILE"
+        /bin/echo -n $! > "${ZOOPIDFILE}"
         ;;
       esac
       if [ $? -eq 0 ]; then
@@ -183,14 +183,14 @@ start)
     fi
     ;;
 start-foreground)
-    ZOO_CMD=(exec "$JAVA")
+    ZOO_CMD=(exec "${JAVA}")
     if [ "${ZOO_NOEXEC}" != "" ]; then
-      ZOO_CMD=("$JAVA")
+      ZOO_CMD=("${JAVA}")
     fi
-    "${ZOO_CMD[@]}" $ZOO_DATADIR_AUTOCREATE "-Dzookeeper.log.dir=${ZOO_LOG_DIR}" \
+    "${ZOO_CMD[@]}" "${ZOO_DATADIR_AUTOCREATE}" "-Dzookeeper.log.dir=${ZOO_LOG_DIR}" \
     "-Dzookeeper.log.file=${ZOO_LOG_FILE}" "-Dzookeeper.root.logger=${ZOO_LOG4J_PROP}" \
     -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError='kill -9 %p' \
-    -cp "$CLASSPATH" "$JVMFLAGS" $ZOOMAIN "$ZOOCFG"
+    -cp "${CLASSPATH}" "${JVMFLAGS}" "${ZOOMAIN}" "${ZOOCFG}"
     ;;
 print-cmd)
     echo "\"$JAVA\" $ZOO_DATADIR_AUTOCREATE -Dzookeeper.log.dir=\"${ZOO_LOG_DIR}\" \
@@ -286,7 +286,7 @@ status)
       echo "Error contacting service. It is probably not running."
       exit 1
     else
-      echo "$STAT"
+      echo "${STAT}"
       exit 0
     fi
     ;;
